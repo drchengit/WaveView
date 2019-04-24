@@ -7,7 +7,7 @@
 
 网络图片，如有侵权立即更换。
 
-实现效果：
+实现效果：（效果是正常的gif显示有问题）
 
 ![效果.gif](https://upload-images.jianshu.io/upload_images/11024618-83aafa279dfaf569.gif?imageMogr2/auto-orient/strip)
 
