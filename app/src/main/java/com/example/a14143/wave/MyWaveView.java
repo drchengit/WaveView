@@ -1,37 +1,48 @@
 package com.example.a14143.wave;
 
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
-import android.graphics.Path;
+import android.graphics.Picture;
+import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.graphics.Shader;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 
 /**
  * @author DrChen
- * @Date 2019/4/16 0016.
+ * @Date 2019/9/9 0009.
  * qq:1414355045
- * 三段渐变波纹
  */
-public class WaveView extends View {
+public class MyWaveView extends SurfaceView implements SurfaceHolder.Callback, Runnable {
+
     /**
      * 三段渐变的中点
      */
     private final float gradient_height_mid = 0.28f;
-
     private final float top_wave_top = 0.28f;
     private final float top_wave_bottom = top_wave_top + 0.06f;
-    private final float bottom_wave_bottom = top_wave_bottom ;
+    private final float bottom_wave_bottom = top_wave_bottom;
     private final float bottom_wave_top = top_wave_bottom - 0.05f;
-
-
+    private SurfaceHolder mHolder;
+    /**
+     * 与surfaceHolder 绑定的Canvas
+     */
+    private Canvas mCanvas;
+    /**
+     * 用于绘制线程
+     */
+    private Thread t;
+    /**
+     * 线程的控制开关
+     */
+    private boolean isRunning;
     /**
      * 这个是背景的渐变色和波浪的颜色
      */
@@ -56,10 +67,7 @@ public class WaveView extends View {
      * 是否开启辅助的画笔
      */
     private boolean isDebug = false;
-    /**
-     * view 是否被删除
-     */
-    private boolean onPause = false;
+
 
     /**
      * 整个视图的背景是三种颜色的渐变，蓝到紫的区域
@@ -83,17 +91,24 @@ public class WaveView extends View {
     private Wave bottomWave;
     private Wave topWave;
 
-
-    public WaveView(Context context) {
+    public MyWaveView(Context context) {
         this(context, null);
     }
 
-    public WaveView(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, -1);
-    }
+    public MyWaveView(Context context, AttributeSet attrs) {
+        super(context, attrs);
 
-    public WaveView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
+        mHolder = getHolder();
+        mHolder.addCallback(this);
+
+        // setZOrderOnTop(true);// 设置画布 背景透明
+         mHolder.setFormat(PixelFormat.TRANSLUCENT);
+
+        //设置可获得焦点
+        setFocusable(true);
+        setFocusableInTouchMode(true);
+        //设置常亮
+        this.setKeepScreenOn(true);
 
         topColor = Color.parseColor("#3851DF");
         midColor = Color.parseColor("#937EF7");
@@ -115,6 +130,7 @@ public class WaveView extends View {
         //防抖动
         wavePaint.setDither(true);
 
+
         if (testPaint == null) {
             testPaint = new Paint();
         }
@@ -122,17 +138,8 @@ public class WaveView extends View {
         testPaint.setStrokeWidth(2);
         testPaint.setStyle(Paint.Style.STROKE);
 
-
     }
 
-    public void onResume() {
-        onPause = false;
-        invalidate();
-    }
-
-    public void onPause() {
-        onPause = true;
-    }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -155,16 +162,16 @@ public class WaveView extends View {
 
         if (bottomWave == null) {
             //我的数据屏幕宽度是750，浪高50, 每个点位后面要加f 不然算出来的数据会全错，因为会丢失小数点
-            bottomWave = new Wave( true, bottom_wave_RectF,0.2f,mHeight,dip2px(3,getContext()),
+            bottomWave = new Wave(true, bottom_wave_RectF, 0.2f, mHeight, dip2px(6, getContext()),
                     new float[]{0 / 750f, 35 / 50f},
                     new float[]{214 / 750f, 6 / 50f},
                     new float[]{362 / 750f, 28 / 50f},
                     new float[]{582 / 750f, 6 / 50f},
                     new float[]{903 / 750f, 41 / 50f},
                     new float[]{1149 / 750f, 25 / 50f},
-                    new float[]{1262/750f,35/50f},
-                    new float[]{1390/750f,60/50f},//最后这个点可以适当调整，保证平滑
-            new float[]{1522/750f,35/50f}
+                    new float[]{1262 / 750f, 35 / 50f},
+                    new float[]{1390 / 750f, 60 / 50f},//最后这个点可以适当调整，保证平滑
+                    new float[]{1522 / 750f, 35 / 50f}
 //                    new float[]{0 / 750f, 28 / 78f},
 //                    new float[]{262 / 750f, 0 / 78f},
 //                    new float[]{657 / 750f, 37 / 78f},
@@ -176,73 +183,89 @@ public class WaveView extends View {
 
         }
 
-        if(topWave==null){
+        if (topWave == null) {
             //我的数据屏幕宽度是750，浪高50, 每个点位后面要加f 不然算出来的数据会全错，因为会丢失小数点
-            topWave = new Wave(false, top_wave_RectF,0.15f,mHeight,dip2px(1,getContext()),
+            topWave = new Wave(false, top_wave_RectF, 0.15f, mHeight, dip2px(6, getContext()),
                     new float[]{0 / 750f, 28 / 78f},
                     new float[]{262 / 750f, 0 / 78f},
                     new float[]{657 / 750f, 37 / 78f},
                     new float[]{1052 / 750f, 0 / 78f},
                     new float[]{1314 / 750f, 28 / 78f},
                     new float[]{1520 / 750f, 60 / 78f},
-                    new float[]{1709/750f,28/78f}
+                    new float[]{1709 / 750f, 28 / 78f}
 
             );
 
         }
 
 
-
     }
+
     /**
      * dp转px
-     * @param dip       dp
-     * @param context   上下文
+     *
+     * @param dip     dp
+     * @param context 上下文
      * @return
      */
-    public static int dip2px(float dip, Context context) { float density = context.getResources().getDisplayMetrics().density;
+    public static int dip2px(float dip, Context context) {
+        float density = context.getResources().getDisplayMetrics().density;
         int px = (int) (dip * density + 0.5f);// 4.9->4, 4.1->4, 四舍五入
         return px;
     }
 
+
+
+    /**每30帧刷新一次屏幕**/
+    public static final int TIME_IN_FRAME = 30;
     @Override
-    protected void onDraw(Canvas canvas) {
-//        super.onDraw(canvas);
+    public void run() {
+        while (isRunning) {
 
+            /**取得更新之前的时间**/
+            long startTime = System.currentTimeMillis();
 
-        //绘制背景三段渐变
-        drawBackdrop(canvas);
-        if (isDebug) {
-            canvas.drawRect(bottom_wave_RectF, testPaint);
+            /**在这里加上线程安全锁**/
+            synchronized (mHolder) {
+                /**拿到当前画布 然后锁定**/
+                mCanvas =mHolder.lockCanvas();
+                draw();
+                /**绘制结束后解锁显示在屏幕上**/
+                mHolder.unlockCanvasAndPost(mCanvas);
+            }
+
+            /**取得更新结束的时间**/
+            long endTime = System.currentTimeMillis();
+
+            /**计算出一次更新的毫秒数**/
+            int diffTime  = (int)(endTime - startTime);
+
+            /**确保每次更新时间为30帧**/
+            while(diffTime <=TIME_IN_FRAME) {
+                diffTime = (int)(System.currentTimeMillis() - startTime);
+                /**线程等待**/
+                Thread.yield();
+            }
+
         }
-//        topWave.testMoveTo(0.4f);
-//        bottomWave.testMoveTo(0.6f);
-
-
-
-        topWave.draw(canvas,wavePaint);
-        bottomWave.draw(canvas,wavePaint);
-
-
-
-
-
-
-
-        if (onPause) {
-            return;
-        }
-      postInvalidateDelayed(10);
-
-
     }
 
+    private void draw() {
+
+            if (mCanvas != null) {
+                mCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+
+                //绘制背景三段渐变
+                drawBackdrop(mCanvas);
+                if (isDebug) {
+                    mCanvas.drawRect(bottom_wave_RectF, testPaint);
+                }
 
 
-    @Override
-    protected void onDetachedFromWindow() {
-        onPause = true;
-        super.onDetachedFromWindow();
+
+                topWave.draw(mCanvas, wavePaint);
+                bottomWave.draw(mCanvas, wavePaint);
+            }
 
     }
 
@@ -262,10 +285,22 @@ public class WaveView extends View {
         canvas.drawRect(gradient_top, gradientPaint);
     }
 
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        // 开启线程
+        isRunning = true;
+        t = new Thread(this);
+        t.start();
+    }
 
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 
+    }
 
-
-
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        // 通知关闭线程
+        isRunning = false;
+    }
 }
-

@@ -5,6 +5,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.util.Log;
+import android.view.View;
 
 /**
  * @author DrChen
@@ -24,7 +25,7 @@ public class Wave {
      */
     boolean isLeft = true;
     /**
-     * 单个循环一半长度占屏幕宽度的百分比（浪的长度等于一个循环的1/2）
+     * 单个循环长度占屏幕宽度的百分比（浪的长度等）
      */
     private float waveWithF;
     /**
@@ -65,7 +66,7 @@ public class Wave {
      * @param rectF  绘制区域
      * @param points
      */
-    public Wave(  boolean isLeft, RectF rectF,float lineSmoothness,int mHeight,int moveX,float[]... points) {
+    public Wave(boolean isLeft, RectF rectF,float lineSmoothness,int mHeight,int moveX,float[]... points) {
 
         this.isLeft = isLeft;
         this.mHeight = mHeight;
@@ -262,7 +263,7 @@ public class Wave {
                         wavePoints[i][2]+waveWith, wavePoints[i][3],
                         wavePoints[i][4]+waveWith, wavePoints[i ][5]);
             }
-            path.lineTo(waveWith + wavePoints[wavePoints.length-1][0], mHeight);
+            path.lineTo( waveWith+wavePoints[wavePoints.length-1][0], mHeight);
             path.close();
 
         }else {

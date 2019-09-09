@@ -3,8 +3,11 @@ package com.example.a14143.wave;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-public class MainActivity extends AppCompatActivity {
-WaveView waveView;
+/**
+ * surfaceView 改造后的view ,没有卡顿
+ */
+public class SurfaceViewActivity extends AppCompatActivity {
+MyWaveView waveView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -14,15 +17,5 @@ WaveView waveView;
 
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-    waveView.onResume();
-    }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-    waveView.onPause();
-    }
 }
