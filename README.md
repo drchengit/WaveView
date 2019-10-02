@@ -1,6 +1,6 @@
 # WaveView
 不均匀的或者不规则的双层波浪如何实现
-我的博文：https://www.jianshu.com/p/fc307b66bf67
+我的博文：https://juejin.im/post/5d6e1e58f265da03d42fc15b
 理想效果：
 
 ![大概是这样的效果.gif](https://upload-images.jianshu.io/upload_images/11024618-6b6507f6b11d7432.gif?imageMogr2/auto-orient/strip)
